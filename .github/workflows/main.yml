@@ -1,0 +1,87 @@
+name: Build and Deploy Discourse to GitHub Package Registry
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:12-alpine
+        env:
+          POSTGRES_DB: bootstrap
+          POSTGRES_USER: bootstrap
+          POSTGRES_PASSWORD: ''
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U bootstrap"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:6
+        ports:
+          - 6379:6379
+        options: --entrypoint redis-server
+
+    env:
+      FF_NETWORK_PER_BUILD: "true"
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y coreutils bash git grep jq
+
+    - name: Clone Discourse Docker repository
+      run: git clone --depth=1 https://github.com/discourse/discourse_docker /var/discourse
+
+    - name: Configure Discourse
+      run: |
+        config=web_only
+        version=stable
+        sed -i "s/__DISCOURSE_VERSION__/$version/g" "$config.yml"
+        cp "$config.yml" /var/discourse/containers
+        cd /var/discourse
+        mkdir /var/lib/docker
+
+    - name: Get Docker Network Details
+      id: network
+      run: |
+        container="$(cat /proc/self/cgroup | grep -o 'docker/.*' | grep -Po '[^/]+$' | uniq)"
+        echo "container_id=$container" >> $GITHUB_ENV
+        network="$(docker inspect $container | jq -r '.[0].NetworkSettings.Networks | keys[]')"
+        echo "network_id=$network" >> $GITHUB_ENV
+
+    - name: Bootstrap Discourse
+      run: |
+        cd /var/discourse
+        ./launcher bootstrap "$config" --docker-args "--net=$network_id"
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Tag and Push Docker Image to GitHub Container Registry
+      uses: docker/build-push-action@v5
+      with:
+        context: /var/discourse
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}:$version-$config
+        load: true
