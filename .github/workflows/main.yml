@@ -52,6 +52,7 @@ jobs:
     - name: Bootstrap Discourse
       run: |
         cd $GITHUB_WORKSPACE/discourse
+        cp samples/web_only.yml containers
         ./launcher bootstrap web_only --docker-args "--net=${network_id}"
 
     - name: Log in to GitHub Container Registry
