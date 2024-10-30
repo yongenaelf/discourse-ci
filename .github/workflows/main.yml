@@ -43,17 +43,18 @@ jobs:
     - name: Clone Discourse Docker repository
       run: git clone --depth=1 https://github.com/discourse/discourse_docker $GITHUB_WORKSPACE/discourse
 
-    - name: Determine Docker Network
-      id: network
-      run: |
-        network_id=$(docker network ls --format '{{.Name}}' | grep -m1 bridge)
-        echo "network_id=$network_id" >> $GITHUB_ENV
+    - name: Create Docker Network
+      run: docker network create discourse_network
 
     - name: Bootstrap Discourse
       run: |
         cd $GITHUB_WORKSPACE/discourse
         cp samples/web_only.yml containers
-        ./launcher bootstrap web_only --docker-args "--net=${network_id}"
+        ./launcher bootstrap web_only --docker-args "--net=discourse_network"
+
+    - name: Clean Up - Remove Docker Network
+      if: always()
+      run: docker network rm discourse_network
 
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v2
