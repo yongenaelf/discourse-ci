@@ -9,22 +9,6 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:12-alpine
-        env:
-          POSTGRES_DB: bootstrap
-          POSTGRES_USER: bootstrap
-          POSTGRES_PASSWORD: ''
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:6
-        ports:
-          - 6379:6379
-
     env:
       FF_NETWORK_PER_BUILD: "true"
 
@@ -40,6 +24,20 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y coreutils bash git grep jq
 
+    - name: Start PostgreSQL Service and Attach to Network
+      run: |
+        docker run -d --name postgres \
+          --network discourse_network \
+          -e POSTGRES_DB=bootstrap \
+          -e POSTGRES_USER=bootstrap \
+          -e POSTGRES_PASSWORD='' \
+          -e POSTGRES_HOST_AUTH_METHOD=trust \
+          postgres:12-alpine
+
+    - name: Start Redis Service and Attach to Network
+      run: |
+        docker run -d --name redis --network discourse_network redis:6
+
     - name: Clone Discourse Docker repository
       run: git clone --depth=1 https://github.com/discourse/discourse_docker $GITHUB_WORKSPACE/discourse
 
@@ -49,7 +47,13 @@ jobs:
         cp samples/web_only.yml containers
         sed -i "s/smtp\.example\.com/smtp2\.example\.com/g" containers/web_only.yml
         sed -i "s/discourse\.example\.com/discourse2\.example\.com/g" containers/web_only.yml
-        ./launcher bootstrap web_only --docker-args "--net=bridge"
+        ./launcher bootstrap web_only --docker-args "--net=discourse_network"
+
+    - name: Clean Up - Remove Docker Containers and Network
+      if: always()
+      run: |
+        docker rm -f redis postgres
+        docker network rm discourse_network
 
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v2
