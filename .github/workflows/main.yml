@@ -1,4 +1,4 @@
-name: Build and Deploy Discourse to GitHub Package Registry
+name: Build and Deploy Discourse to GitHub Container Registry
 
 on:
   push:
@@ -19,17 +19,11 @@ jobs:
           POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U bootstrap"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
 
       redis:
         image: redis:6
         ports:
           - 6379:6379
-        options: --entrypoint redis-server
 
     env:
       FF_NETWORK_PER_BUILD: "true"
@@ -59,13 +53,11 @@ jobs:
         cp "$config.yml" containers
         mkdir -p /var/lib/docker
 
-    - name: Get Docker Network Details
+    - name: Determine Docker Network
       id: network
       run: |
-        container="$(cat /proc/self/cgroup | grep -o 'docker/.*' | grep -Po '[^/]+$' | uniq)"
-        echo "container_id=$container" >> $GITHUB_ENV
-        network="$(docker inspect $container | jq -r '.[0].NetworkSettings.Networks | keys[]')"
-        echo "network_id=$network" >> $GITHUB_ENV
+        network_id=$(docker network ls --format '{{.Name}}' | grep -m1 bridge)
+        echo "network_id=$network_id" >> $GITHUB_ENV
 
     - name: Bootstrap Discourse
       run: |
@@ -84,4 +76,4 @@ jobs:
       with:
         context: $GITHUB_WORKSPACE/discourse
         tags: |
-          ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}:$version-$config
+          ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:$version-$config
