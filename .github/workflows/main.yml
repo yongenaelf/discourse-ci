@@ -43,16 +43,6 @@ jobs:
     - name: Clone Discourse Docker repository
       run: git clone --depth=1 https://github.com/discourse/discourse_docker $GITHUB_WORKSPACE/discourse
 
-    - name: Configure Discourse
-      run: |
-        config=web_only
-        version=stable
-        cp $GITHUB_WORKSPACE/web_only.yml $GITHUB_WORKSPACE/discourse
-        cd $GITHUB_WORKSPACE/discourse
-        sed -i "s/__DISCOURSE_VERSION__/$version/g" "$config.yml"
-        cp "$config.yml" containers
-        mkdir -p /var/lib/docker
-
     - name: Determine Docker Network
       id: network
       run: |
@@ -62,7 +52,7 @@ jobs:
     - name: Bootstrap Discourse
       run: |
         cd $GITHUB_WORKSPACE/discourse
-        ./launcher bootstrap $config --docker-args "--net=$network_id"
+        ./launcher bootstrap web_only --docker-args "--net=${network_id}"
 
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v2
