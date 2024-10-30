@@ -45,6 +45,14 @@ jobs:
         sed -i "s/discourse\.example\.com/discourse2\.example\.com/g" containers/web_only.yml
         ./launcher bootstrap web_only --docker-args "--net=discourse_network"
 
+    - name: Generate Version from Timestamp
+      id: version
+      run: echo "VERSION=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+
+    - name: Tag Docker Image
+      run: |
+        docker tag local_discourse/web-only ghcr.io/${{ github.repository_owner }}/web-only:${{ env.VERSION }}
+
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v2
       with:
@@ -52,9 +60,6 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Tag and Push Docker Image to GitHub Container Registry
-      uses: docker/build-push-action@v5
-      with:
-        context: $GITHUB_WORKSPACE/discourse
-        tags: |
-          ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:$version-$config
+    - name: Push Docker Image to GitHub Container Registry
+      run: |
+        docker push ghcr.io/${{ github.repository_owner }}/web-only:${{ env.VERSION }}
