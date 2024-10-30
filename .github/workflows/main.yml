@@ -53,6 +53,7 @@ jobs:
       run: |
         config=web_only
         version=stable
+        cp $GITHUB_WORKSPACE/web_only.yml $GITHUB_WORKSPACE/discourse
         cd $GITHUB_WORKSPACE/discourse
         sed -i "s/__DISCOURSE_VERSION__/$version/g" "$config.yml"
         cp "$config.yml" containers
