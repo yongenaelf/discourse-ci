@@ -45,12 +45,6 @@ jobs:
         sed -i "s/discourse\.example\.com/discourse2\.example\.com/g" containers/web_only.yml
         ./launcher bootstrap web_only --docker-args "--net=discourse_network"
 
-    - name: Clean Up - Remove Docker Containers and Network
-      if: always()
-      run: |
-        ./launcher destroy data
-        docker network rm discourse_network
-
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v2
       with:
