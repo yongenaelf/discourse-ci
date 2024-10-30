@@ -50,6 +50,7 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE/discourse
         cp samples/web_only.yml containers
+        sed -i "s/smtp\.example\.com/smtp2\.example\.com/g" containers/web_only.yml
         ./launcher bootstrap web_only --docker-args "--net=discourse_network"
 
     - name: Clean Up - Remove Docker Network
