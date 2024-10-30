@@ -24,6 +24,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y coreutils bash git grep jq
 
+    - name: Create Docker Network
+      run: docker network create discourse_network
+
     - name: Start PostgreSQL Service and Attach to Network
       run: |
         docker run -d --name postgres \
