@@ -27,22 +27,15 @@ jobs:
     - name: Create Docker Network
       run: docker network create discourse_network
 
-    - name: Start PostgreSQL Service and Attach to Network
-      run: |
-        docker run -d --name postgres \
-          --network discourse_network \
-          -e POSTGRES_DB=bootstrap \
-          -e POSTGRES_USER=bootstrap \
-          -e POSTGRES_PASSWORD='' \
-          -e POSTGRES_HOST_AUTH_METHOD=trust \
-          postgres:12-alpine
-
-    - name: Start Redis Service and Attach to Network
-      run: |
-        docker run -d --name redis --network discourse_network redis:6
-
     - name: Clone Discourse Docker repository
       run: git clone --depth=1 https://github.com/discourse/discourse_docker $GITHUB_WORKSPACE/discourse
+
+    - name: Bootstrap Data
+      run: |
+        cd $GITHUB_WORKSPACE/discourse
+        cp samples/data.yml containers
+        ./launcher bootstrap data --docker-args "--net=discourse_network"
+        ./launcher start data --docker-args "--net=discourse_network"
 
     - name: Bootstrap Discourse
       run: |
