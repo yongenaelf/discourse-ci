@@ -45,21 +45,13 @@ jobs:
         sed -i "s/discourse\.example\.com/discourse2\.example\.com/g" containers/web_only.yml
         ./launcher bootstrap web_only --docker-args "--net=discourse_network"
 
-    - name: Get Tag for Locally Built Image
-      id: get_tag
-      run: |
-        image_name="local_discourse/web-only"
-        image_tag=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "${image_name}" | head -n 1 | awk -F: '{print $2}')
-        echo "IMAGE_TAG=$image_tag" >> $GITHUB_ENV
-      shell: bash
-
     - name: Generate Version from Timestamp
       id: version
       run: echo "VERSION=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
 
     - name: Tag Docker Image
       run: |
-        docker tag local_discourse/web-only:${{ env.IMAGE_TAG }} ghcr.io/${{ github.repository_owner }}/web-only:${{ env.VERSION }}
+        docker tag local_discourse/app ghcr.io/${{ github.repository_owner }}/web-only:${{ env.VERSION }}
 
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v2
