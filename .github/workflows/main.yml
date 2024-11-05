@@ -52,7 +52,7 @@ jobs:
 
     - name: Tag Docker Image
       run: |
-        docker tag local_discourse/web_only ghcr.io/${{ github.repository_owner }}/web-only:${{ env.VERSION }}
+        docker tag local_discourse/web_only ghcr.io/${{ github.repository }}/web-only:${{ env.VERSION }}
 
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v2
