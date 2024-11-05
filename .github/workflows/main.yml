@@ -44,7 +44,7 @@ jobs:
         sed -i "s/smtp\.example\.com/smtp2\.example\.com/g" containers/web_only.yml
         sed -i "s/discourse\.example\.com/discourse2\.example\.com/g" containers/web_only.yml
         ./launcher bootstrap web_only --docker-args "--net=discourse_network"
-        docker image ls
+        ./launcher start-cmd web_only
 
     - name: Generate Version from Timestamp
       id: version
@@ -52,7 +52,7 @@ jobs:
 
     - name: Tag Docker Image
       run: |
-        docker tag local_discourse/app ghcr.io/${{ github.repository_owner }}/web-only:${{ env.VERSION }}
+        docker tag local_discourse/web_only ghcr.io/${{ github.repository_owner }}/web-only:${{ env.VERSION }}
 
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v2
