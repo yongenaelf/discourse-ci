@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-only
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-only
+  template:
+    metadata:
+      labels:
+        app: web-only
+    spec:
+      containers:
+      - name: web-only
+        image: ghcr.io/yongenaelf/discourse-ci/web_only
+        command: ["/sbin/boot"]
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+        env:
+        - name: LANG
+          value: "en_US.UTF-8"
+        - name: RAILS_ENV
+          value: "production"
+        - name: UNICORN_WORKERS
+          value: "3"
+        - name: UNICORN_SIDEKIQS
+          value: "1"
+        - name: RUBY_GC_HEAP_GROWTH_MAX_SLOTS
+          value: "40000"
+        - name: RUBY_GC_HEAP_INIT_SLOTS
+          value: "400000"
+        - name: RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR
+          value: "1.5"
+        - name: DISCOURSE_DB_SOCKET
+          value: ""
+        - name: DISCOURSE_DB_HOST
+          value: "data"
+        - name: DISCOURSE_DB_PORT
+          value: ""
+        - name: LC_ALL
+          value: "en_US.UTF-8"
+        - name: LANGUAGE
+          value: "en_US.UTF-8"
+        - name: DISCOURSE_HOSTNAME
+          value: "discourse2.example.com"
+        - name: DISCOURSE_DEVELOPER_EMAILS
+          value: "me@example.com,you@example.com"
+        - name: DISCOURSE_SMTP_ADDRESS
+          value: "smtp2.example.com"
+        - name: DISCOURSE_SMTP_USER_NAME
+          value: "user@example.com"
+        - name: 'DISCOURSE_SMTP_PASSWORD'
+          value: 'pa$$word' # Consider using secrets for sensitive data
+        - name: DISCOURSE_DB_PASSWORD
+          value: "SOME_SECRET" # Consider using secrets for sensitive data
+        - name: DISCOURSE_REDIS_HOST
+          value: "data"
+        - name: DOCKER_HOST_IP
+          value: "172.17.0.1"
+        resources:
+          limits:
+            memory: "512Mi"  # Equivalent to --shm-size
+        volumeMounts:
+        - mountPath: /shared
+          name: shared-volume
+        - mountPath: /var/log
+          name: log-volume
+      volumes:
+      - name: shared-volume
+        hostPath:
+          path: /var/discourse/shared/web-only
+      - name: log-volume
+        hostPath:
+          path: /var/discourse/shared/web-only/log/var-log
