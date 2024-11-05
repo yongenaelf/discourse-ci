@@ -44,6 +44,7 @@ jobs:
         sed -i "s/smtp\.example\.com/smtp2\.example\.com/g" containers/web_only.yml
         sed -i "s/discourse\.example\.com/discourse2\.example\.com/g" containers/web_only.yml
         ./launcher bootstrap web_only --docker-args "--net=discourse_network"
+        docker image ls
 
     - name: Generate Version from Timestamp
       id: version
